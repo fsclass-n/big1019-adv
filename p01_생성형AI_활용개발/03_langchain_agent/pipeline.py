@@ -3,6 +3,7 @@
 실행:
   uvicorn web:app --reload   # 브라우저 → http://127.0.0.1:8000
   python pipeline.py         # 터미널
+Gemini 키는 루트 .env 의 GEMINI_API_KEY 에서 읽는다 (llm.py).
 키가 없으면 FakeListChatModel(정해진 답을 순서대로 돌려주는 가짜 LLM)으로 동작.
 """
 from langchain_core.language_models.fake_chat_models import FakeListChatModel

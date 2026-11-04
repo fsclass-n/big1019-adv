@@ -3,6 +3,7 @@
 실행:
   uvicorn web:app --reload                                   # 브라우저 → http://127.0.0.1:8000
   python agent.py "오늘 날짜와 12345 * 678 의 결과를 알려줘"     # 터미널
+Gemini 키는 루트 .env 의 GEMINI_API_KEY 에서 읽는다 (llm.py).
 키가 없으면 ScriptedLLM(규칙으로 도구를 고르는 가짜 LLM)이 같은 루프를 따라 동작한다.
 """
 import ast
@@ -14,7 +15,7 @@ from datetime import date
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import tool
 
-from llm import gemini_or_none
+from llm import MODEL, gemini_or_none
 
 MAX_STEPS = 5
 
@@ -81,7 +82,7 @@ def run_agent(question):
     """
     real = gemini_or_none(temperature=0)
     llm = real.bind_tools(list(TOOLS.values())) if real else ScriptedLLM()
-    trace = {"model": "Gemini + bind_tools" if real else "ScriptedLLM (모의)", "steps": [], "answer": None}
+    trace = {"model": f"Gemini {MODEL} + bind_tools" if real else "ScriptedLLM (모의)", "steps": [], "answer": None}
 
     messages = [SystemMessage("필요하면 도구를 사용해 정확하게 답하라."), HumanMessage(question)]
     for step in range(1, MAX_STEPS + 1):

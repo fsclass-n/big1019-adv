@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 import agent
+import llm
 import pipeline
 
 app = FastAPI(title="LangChain 에이전트 & 파이프라인")
@@ -25,6 +26,12 @@ class Article(BaseModel):
 @app.get("/")
 def index():
     return FileResponse(Path(__file__).parent / "index.html")
+
+
+@app.get("/api/info")
+def info():
+    # 키 값 자체는 절대 응답에 넣지 않고, 설정 여부만 알려준다
+    return {"mode": llm.mode(), "env_file": str(llm.ROOT_ENV), "env_exists": llm.ROOT_ENV.exists()}
 
 
 @app.get("/api/sample")

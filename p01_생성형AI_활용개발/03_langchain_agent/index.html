@@ -20,6 +20,7 @@
 </head>
 <body>
 <h1>LangChain 에이전트 & 파이프라인</h1>
+<p class="muted">LLM: <b id="mode">-</b> <span id="envHint"></span></p>
 
 <section>
   <h2>① 도구를 쓰는 에이전트 <small class="muted" id="agentModel"></small></h2>
@@ -78,6 +79,10 @@ async function runPipeline() {
 }
 
 fetch('/api/sample').then(r => r.json()).then(d => $('article').value = d.article);
+fetch('/api/info').then(r => r.json()).then(d => {
+  $('mode').textContent = d.mode;
+  if (d.mode.startsWith('모의')) $('envHint').textContent = `— ${d.env_file} 에 GEMINI_API_KEY=키 를 추가하고 서버를 재시작하세요`;
+});
 </script>
 </body>
 </html>
