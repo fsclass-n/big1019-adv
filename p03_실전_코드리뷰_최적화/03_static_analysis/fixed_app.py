@@ -4,7 +4,10 @@ import os
 import shutil
 from pathlib import Path
 
-DB_PASSWORD = os.environ.get("DB_PASSWORD", "")  # 비밀 값은 코드가 아니라 환경 변수로
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")  # 저장소 루트의 .env
+DB_PASSWORD = os.environ.get("DB_PASSWORD", "")  # 비밀 값은 코드가 아니라 .env(환경 변수)로
 GRADE_CUTS = [(95, "A+"), (90, "A"), (80, "B"), (70, "C"), (60, "D")]
 
 

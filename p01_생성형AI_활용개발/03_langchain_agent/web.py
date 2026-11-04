@@ -4,7 +4,7 @@
 """
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
@@ -41,9 +41,18 @@ def sample():
 
 @app.post("/api/agent")
 def run_agent(body: Question):
-    return agent.run_agent(body.question)
+    return call_llm(agent.run_agent, body.question)
 
 
 @app.post("/api/pipeline")
 def run_pipeline(body: Article):
-    return pipeline.run_pipeline(body.article)
+    return call_llm(pipeline.run_pipeline, body.article)
+
+
+def call_llm(func, arg):
+    """LLM 오류(한도 초과·키 오류 등)를 500 대신 이해하기 쉬운 메시지로 돌려준다."""
+    try:
+        return func(arg)
+    except Exception as e:  # Gemini 라이브러리마다 예외 종류가 달라 메시지 내용으로 구분
+        status, message = llm.explain_error(e)
+        raise HTTPException(status, message) from e

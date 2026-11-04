@@ -7,7 +7,8 @@
   python run.py --plan evil_plan.json                                                # 위험한 계획이 거부되는지 확인
   python run.py --reset                                                              # 연습 폴더 초기화
 
-모든 작업은 sandbox/ 폴더 안에서만 실행된다. GEMINI_API_KEY 가 없으면 규칙 기반 파서가 계획을 만든다.
+모든 작업은 sandbox/ 폴더 안에서만 실행된다.
+키는 저장소 루트 .env 의 GEMINI_API_KEY. 없으면 규칙 기반 파서가 계획을 만든다.
 """
 import argparse
 import json
@@ -17,10 +18,13 @@ import shutil
 from datetime import date, datetime
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 BASE = Path(__file__).parent
+load_dotenv(BASE.resolve().parents[1] / ".env")  # 저장소 루트의 .env
 SANDBOX = BASE / "sandbox"
 LOG = BASE / "run.log"
-MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
+MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
 MAX_STEPS = 20
 
 ALLOWED = {
@@ -55,7 +59,7 @@ def plan_with_llm(request):
     from google import genai
     from google.genai import types
 
-    text = genai.Client().models.generate_content(
+    text = genai.Client(api_key=os.getenv("GEMINI_API_KEY")).models.generate_content(
         model=MODEL,
         contents=PROMPT.replace("{today}", date.today().isoformat()).replace("{request}", request),
         config=types.GenerateContentConfig(temperature=0, response_mime_type="application/json"),
@@ -80,8 +84,12 @@ def plan_with_rules(request):
 
 def make_plan(request):
     """(계획, 만든 방식) 반환. 키가 있으면 Gemini, 없으면 규칙 기반."""
-    if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"):
-        return plan_with_llm(request), f"Gemini {MODEL}"
+    if os.getenv("GEMINI_API_KEY"):
+        try:
+            return plan_with_llm(request), f"Gemini {MODEL}"
+        except Exception as e:  # 한도 초과(429)·키 오류 등 → 규칙 기반으로 대체하고 표시
+            print("AI 계획 생성 실패, 규칙 기반으로 대체:", e)
+            return plan_with_rules(request), "규칙 기반 파서(AI 장애 대체)"
     return plan_with_rules(request), "규칙 기반 파서(모의)"
 
 

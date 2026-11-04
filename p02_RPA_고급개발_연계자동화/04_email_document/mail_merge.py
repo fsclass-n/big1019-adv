@@ -4,8 +4,12 @@
   uvicorn web:app --reload   # 브라우저 → http://127.0.0.1:8000 (테스트 메일 서버도 자동 실행)
   python mail_server.py      (터미널 1)  →  python mail_merge.py   (터미널 2)
   또는 한 번에:  python mail_merge.py --demo   (테스트 서버를 내부에서 같이 실행)
+
+메일 서버 설정은 저장소 루트 .env 에서 읽는다. 설정이 없으면 내 PC의 테스트 서버(127.0.0.1:1025)로 보낸다.
+  SMTP_HOST=smtp.gmail.com  SMTP_PORT=587  SMTP_USER=내주소@gmail.com  SMTP_PASSWORD=앱비밀번호  SMTP_SENDER=내주소@gmail.com
 """
 import html
+import os
 import smtplib
 import sys
 import time
@@ -16,13 +20,18 @@ from pathlib import Path
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt, RGBColor
+from dotenv import load_dotenv
 from openpyxl import Workbook, load_workbook
 
 BASE = Path(__file__).parent
+load_dotenv(BASE.resolve().parents[1] / ".env")  # 저장소 루트의 .env
 MEMBERS = BASE / "members.xlsx"
 OUT = BASE / "output"
-SMTP_HOST, SMTP_PORT = "127.0.0.1", 1025
-SENDER = "edu-center@example.com"
+SMTP_HOST = os.getenv("SMTP_HOST", "127.0.0.1")  # 기본값: 테스트 메일 서버 (실제 발송 X)
+SMTP_PORT = int(os.getenv("SMTP_PORT", "1025"))
+SMTP_USER = os.getenv("SMTP_USER")  # 로그인 정보는 코드에 쓰지 않고 .env 에만 둔다
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+SENDER = os.getenv("SMTP_SENDER", "edu-center@example.com")
 
 
 def ensure_members():
@@ -86,9 +95,15 @@ def send_all():
     results = []
 
     try:
-        smtp = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=5)
+        smtp = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10)
+        if SMTP_USER:  # 실제 메일 서버: 암호화(TLS) 후 로그인
+            smtp.starttls()
+            smtp.login(SMTP_USER, SMTP_PASSWORD)
+    except smtplib.SMTPAuthenticationError as e:
+        raise ConnectionError("메일 서버 로그인 실패: 루트 .env 의 SMTP_USER / SMTP_PASSWORD 를 확인하세요.") from e
     except OSError as e:
-        raise ConnectionError("메일 서버에 연결할 수 없습니다. 먼저 `python mail_server.py` 를 실행하세요.") from e
+        raise ConnectionError(f"메일 서버({SMTP_HOST}:{SMTP_PORT})에 연결할 수 없습니다. "
+                              "먼저 `python mail_server.py` 를 실행하세요.") from e
 
     with smtp:
         for name, email, course, score in rows:

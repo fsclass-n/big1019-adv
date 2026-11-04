@@ -1,13 +1,21 @@
+import os
+import secrets
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import bcrypt
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from pydantic import BaseModel
 
-# 설정 정보 (실제 서비스에서는 환경변수로 관리해야 합니다)
-SECRET_KEY = "my_super_secret_key_change_it_frequently"
+# 설정 정보: 토큰 서명 키는 코드에 쓰지 않고 저장소 루트 .env 의 JWT_SECRET_KEY 에서 읽는다
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+if not SECRET_KEY:  # 연습용 대체: 실행할 때마다 임의 키 생성 → 서버를 재시작하면 기존 토큰은 모두 무효
+  SECRET_KEY = secrets.token_hex(32)
+  print("⚠ 루트 .env 에 JWT_SECRET_KEY 가 없어 임시 키를 사용합니다 (재시작하면 로그인 토큰이 무효화됨)")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 토큰 유효 시간 (30분)
 

@@ -3,7 +3,7 @@
 실행:
   uvicorn web:app --reload   # 브라우저 → http://127.0.0.1:8000
   python chatbot.py          # 터미널 (종료: quit)
-GEMINI_API_KEY 가 없으면 모의 모드.
+키는 루트 .env 의 GEMINI_API_KEY (gemini_client.py 가 읽음). 없으면 모의 모드.
 """
 import gemini_client
 

@@ -26,7 +26,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-      - run: pip install -r requirements.txt pytest httpx ruff
+      - run: pip install "fastapi>=0.110" "uvicorn[standard]>=0.29" pytest httpx ruff
       - name: Lint
         run: ruff check .
       - name: Test

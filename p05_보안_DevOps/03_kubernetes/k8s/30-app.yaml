@@ -25,7 +25,7 @@ spec:
             - containerPort: 8000
           envFrom:
             - configMapRef: { name: app-config }
-            - secretRef: { name: app-secret }
+            - secretRef: { name: app-secret, optional: true }   # .env 로 만든 Secret (없어도 실행)
           resources:
             requests: { cpu: 100m, memory: 128Mi }
             limits: { cpu: 500m, memory: 256Mi }

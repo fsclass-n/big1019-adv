@@ -1,16 +1,26 @@
-"""Gemini 호출 공통 모듈. GEMINI_API_KEY 가 없으면 모의 응답을 돌려준다."""
+"""Gemini 호출 공통 모듈.
+
+키는 저장소 루트의 .env 에서 읽는다:  GEMINI_API_KEY=AIza...   (GEMINI_MODEL 은 선택)
+GEMINI_API_KEY 가 없으면 모의 응답을 돌려준다.
+"""
 import os
 import time
+from pathlib import Path
 
-MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
+from dotenv import load_dotenv
+
+ROOT_ENV = Path(__file__).resolve().parents[2] / ".env"  # 저장소 루트의 .env
+load_dotenv(ROOT_ENV)
+
+MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")  # 무료 한도가 넉넉한 Flash-Lite 모델
 
 
 def has_key():
-    return bool(os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
+    return bool(os.getenv("GEMINI_API_KEY"))
 
 
 def mode():
-    return f"Gemini {MODEL}" if has_key() else "모의 모드 (GEMINI_API_KEY 없음)"
+    return f"Gemini {MODEL}" if has_key() else "모의 모드 (루트 .env에 GEMINI_API_KEY 없음)"
 
 
 def _generate(contents, system, temperature, retries=3):
@@ -18,7 +28,7 @@ def _generate(contents, system, temperature, retries=3):
     from google import genai
     from google.genai import errors, types
 
-    client = genai.Client()
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
     config = types.GenerateContentConfig(system_instruction=system, temperature=temperature)
     for attempt in range(retries):
         try:

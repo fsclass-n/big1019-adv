@@ -1,37 +1,40 @@
+# 전체 예제 공통 패키지 (저장소 루트에서: pip install -r requirements.txt)
+
+# 공통: 웹 서버 · 테스트 · .env
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-dotenv>=1.0
+httpx>=0.27
+pytest>=8.0
+
 # p01 생성형AI 활용개발
-google-genai
-openai
-langchain-core
-langchain-google-genai
-fastapi
-uvicorn[standard]
+google-genai>=1.0
+openai>=1.60
+langchain-core>=0.3
+langchain-google-genai>=2.0
 
 # p02 RPA 고급개발 연계자동화
-requests
-beautifulsoup4
-pandas
-openpyxl
-playwright
-python-docx
-aiosmtpd
+requests>=2.31
+beautifulsoup4>=4.12
+pandas>=2.0
+openpyxl>=3.1
+playwright>=1.45
+python-docx>=1.1
+aiosmtpd>=1.4
 
 # p03 실전 코드리뷰 최적화
 ruff
 
 # p04 MLOps 데이터엔지니어링
-scikit-learn
-numpy
-joblib
+scikit-learn>=1.4
+numpy>=1.26
+joblib>=1.3
 mlflow>=3.0
-fastapi
-httpx
-pytest
-sqlalchemy
-python-dotenv
-pymysql
-python-jose
-bcrypt
-python-multipart
+sqlalchemy>=2.0
+pymysql>=1.1
+python-jose>=3.3
+bcrypt>=4.0
+python-multipart>=0.0.9
 
 # p05 보안 DevOps
-redis
+redis>=5.0

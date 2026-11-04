@@ -1,11 +1,18 @@
 """OpenAI API 대화형 챗봇 (유료).
 
+키는 저장소 루트의 .env 에서 읽는다:  OPENAI_API_KEY=sk-...   (OPENAI_MODEL 은 선택)
 OPENAI_API_KEY 가 없으면 모의(mock) 모드로 동작해 무료로 흐름을 익힐 수 있다.
 실행:
   uvicorn web:app --reload   # 브라우저 챗봇 → http://127.0.0.1:8000
   python chatbot.py          # 터미널 챗봇 (종료: quit)
 """
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+ROOT_ENV = Path(__file__).resolve().parents[2] / ".env"  # 저장소 루트의 .env
+load_dotenv(ROOT_ENV)
 
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 INSTRUCTIONS = "너는 온라인 쇼핑몰 고객센터 상담원이다. 3문장 이내로 친절하게 답한다."
@@ -16,13 +23,14 @@ def has_key():
 
 
 def mode():
-    return f"OpenAI {MODEL}" if has_key() else "모의 모드 (OPENAI_API_KEY 없음)"
+    return f"OpenAI {MODEL}" if has_key() else "모의 모드 (루트 .env에 OPENAI_API_KEY 없음)"
 
 
 def ask_openai(history):
     from openai import OpenAI
 
-    response = OpenAI().responses.create(model=MODEL, instructions=INSTRUCTIONS, input=history)
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    response = client.responses.create(model=MODEL, instructions=INSTRUCTIONS, input=history)
     usage = {"input_tokens": response.usage.input_tokens, "output_tokens": response.usage.output_tokens}
     return response.output_text, usage
 

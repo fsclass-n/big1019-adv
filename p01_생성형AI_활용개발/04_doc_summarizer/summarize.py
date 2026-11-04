@@ -1,6 +1,6 @@
 """회의록 요약 + 보고서(Markdown) 자동 생성.
 
-- 키가 있으면: Gemini 생성 요약 + JSON 구조화 추출 (긴 문서는 Map-Reduce)
+- 키(루트 .env 의 GEMINI_API_KEY)가 있으면: Gemini 생성 요약 + JSON 구조화 추출 (긴 문서는 Map-Reduce)
 - 키가 없으면: 단어 빈도 기반 추출 요약 + 정규식 추출 (완전 무료·오프라인)
 
 실행:
@@ -14,7 +14,12 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
+from dotenv import load_dotenv
+
+ROOT_ENV = Path(__file__).resolve().parents[2] / ".env"  # 저장소 루트의 .env (GEMINI_API_KEY)
+load_dotenv(ROOT_ENV)
+
+MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
 CHUNK_CHARS = 3000
 OUT = Path(__file__).parent / "output"
 
@@ -25,7 +30,8 @@ def gemini(prompt, as_json=False):
     from google.genai import types
 
     config = types.GenerateContentConfig(temperature=0.2, response_mime_type="application/json" if as_json else None)
-    return genai.Client().models.generate_content(model=MODEL, contents=prompt, config=config).text
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    return client.models.generate_content(model=MODEL, contents=prompt, config=config).text
 
 
 def chunks(text, size=CHUNK_CHARS):
@@ -97,7 +103,7 @@ def render_report(info, summary, mode):
 
 def summarize(text):
     """요약 + 정보 추출 + 보고서 생성. 키가 있으면 Gemini, 없으면 오프라인 방식."""
-    if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"):
+    if os.getenv("GEMINI_API_KEY"):
         mode, summary, info = f"Gemini ({MODEL})", llm_summary(text), llm_extract(text)
     else:
         mode, summary, info = "추출 요약 (오프라인)", extractive_summary(text), regex_extract(text)

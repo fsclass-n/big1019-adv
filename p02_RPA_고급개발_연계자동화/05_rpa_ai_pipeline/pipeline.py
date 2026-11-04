@@ -4,7 +4,7 @@
 실행:
   uvicorn web:app --reload          # 브라우저 → http://127.0.0.1:8000
   python pipeline.py --pages 2      # 터미널 (--offline: 인터넷 없이 샘플 데이터)
-GEMINI_API_KEY 가 있으면 Gemini가 분류, 없으면 태그·키워드 규칙으로 분류(모의).
+저장소 루트 .env 의 GEMINI_API_KEY 가 있으면 Gemini가 분류, 없으면 태그·키워드 규칙으로 분류(모의).
 """
 import argparse
 import json
@@ -17,10 +17,12 @@ from pathlib import Path
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
 
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")  # 저장소 루트의 .env
 URL = "https://quotes.toscrape.com/page/{}/"
 OUT = Path(__file__).parent / "output"
-MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
+MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
 THEMES = ["사랑", "인생", "성공", "유머", "지혜", "기타"]
 REVIEW_THRESHOLD = 0.6
 SAMPLE = [  # 인터넷이 안 될 때 쓰는 샘플 (사이트와 같은 형식)
@@ -61,7 +63,7 @@ def classify_with_gemini(items):
     from google import genai
     from google.genai import types
 
-    client = genai.Client()
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
     results = []
     for start in range(0, len(items), 10):  # 10건씩 묶어서 요청 → 호출 수 절감
         batch = [{"id": i["id"], "text": i["text"], "tags": i["tags"]} for i in items[start:start + 10]]
@@ -128,7 +130,7 @@ def run(pages, offline=False):
             print("수집 실패 → 샘플 데이터로 대체:", e)
             items, source = sample_items(), "샘플(수집 실패 대체)"
 
-    use_ai = bool(os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
+    use_ai = bool(os.getenv("GEMINI_API_KEY"))
     mode = f"Gemini {MODEL}" if use_ai else "규칙 기반(모의)"
     try:
         analysis = classify_with_gemini(items) if use_ai else classify_with_rules(items)

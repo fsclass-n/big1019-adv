@@ -7,8 +7,8 @@ from fastapi.testclient import TestClient
 
 def make_client(tmp_path):
     os.environ["NOTES_DB"] = str(tmp_path / "test.db")
-    os.environ.pop("GEMINI_API_KEY", None)
-    os.environ.pop("GOOGLE_API_KEY", None)
+    # 빈 값으로 미리 설정 → load_dotenv 가 루트 .env 의 실제 키로 덮어쓰지 않음 → 항상 모의 모드로 테스트
+    os.environ["GEMINI_API_KEY"] = ""
     import app
 
     return TestClient(importlib.reload(app).app)

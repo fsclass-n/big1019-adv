@@ -2,6 +2,7 @@
 
 메모를 저장하면 AI가 요약·태그를 붙여 DB에 저장하고, 저장된 메모를 근거로 질문에 답한다(간단한 RAG).
 실행: uvicorn app:app --reload  →  http://127.0.0.1:8000  (API 문서: /docs)
+키: 저장소 루트 .env 의 GEMINI_API_KEY (없으면 규칙 기반 모의 모드)
 """
 import json
 import os
@@ -10,13 +11,15 @@ import sqlite3
 from contextlib import closing
 from pathlib import Path
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 BASE = Path(__file__).parent
+load_dotenv(BASE.resolve().parents[1] / ".env")  # 저장소 루트의 .env (GEMINI_API_KEY)
 DB_PATH = Path(os.getenv("NOTES_DB", BASE / "notes.db"))
-MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
+MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
 
 app = FastAPI(title="AI 메모장")
 
@@ -36,7 +39,7 @@ with closing(db()) as conn:
 
 
 def has_key():
-    return bool(os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
+    return bool(os.getenv("GEMINI_API_KEY"))
 
 
 def gemini(prompt, as_json=False):
@@ -44,7 +47,8 @@ def gemini(prompt, as_json=False):
     from google.genai import types
 
     config = types.GenerateContentConfig(temperature=0.2, response_mime_type="application/json" if as_json else None)
-    return genai.Client().models.generate_content(model=MODEL, contents=prompt, config=config).text
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    return client.models.generate_content(model=MODEL, contents=prompt, config=config).text
 
 
 def analyze(content):
@@ -114,8 +118,10 @@ def ask(q: Question):
     if not related:
         return {"answer": "관련 메모를 찾지 못했습니다.", "sources": []}
     context = "\n".join(f"[메모 {n['id']}] {n['content']}" for n in related)
+    answer = f"[모의 답변] 관련 메모 {len(related)}개를 찾았습니다: " + related[0]["content"][:60]
     if has_key():
-        answer = gemini(f"다음 메모만 근거로 질문에 2문장 이내로 답하라.\n\n{context}\n\n질문: {q.question}")
-    else:
-        answer = f"[모의 답변] 관련 메모 {len(related)}개를 찾았습니다: " + related[0]["content"][:60]
+        try:
+            answer = gemini(f"다음 메모만 근거로 질문에 2문장 이내로 답하라.\n\n{context}\n\n질문: {q.question}")
+        except Exception as e:  # 한도 초과(429) 등 AI 장애 → 모의 답변으로 대체
+            print("AI 답변 실패, 모의 답변으로 대체:", e)
     return {"answer": answer.strip(), "sources": [n["id"] for n in related]}

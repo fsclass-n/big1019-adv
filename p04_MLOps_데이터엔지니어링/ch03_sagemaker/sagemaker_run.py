@@ -2,8 +2,12 @@
 
 준비:
   pip install sagemaker boto3
-  aws configure                             # 액세스 키 설정 (IAM 사용자, 최소 권한)
-  export SAGEMAKER_ROLE_ARN=arn:aws:iam::<계정ID>:role/<SageMaker 실행 역할>
+  저장소 루트 .env 에 아래 값 설정 (IAM 사용자 액세스 키는 최소 권한으로, 절대 Git에 올리지 않기)
+    AWS_ACCESS_KEY_ID=AKIA...
+    AWS_SECRET_ACCESS_KEY=...
+    AWS_DEFAULT_REGION=ap-northeast-2
+    SAGEMAKER_ROLE_ARN=arn:aws:iam::<계정ID>:role/<SageMaker 실행 역할>
+  (aws configure 로 이미 설정했다면 AWS_* 값은 생략 가능)
 실행:
   python sagemaker_run.py
 """
@@ -12,11 +16,13 @@ import os
 import tempfile
 from pathlib import Path
 
+from dotenv import load_dotenv
 from sklearn.datasets import load_iris
 
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")  # boto3 는 AWS_* 환경 변수를 자동으로 읽는다
 ROLE = os.environ.get("SAGEMAKER_ROLE_ARN")
 if not ROLE:
-    raise SystemExit("SAGEMAKER_ROLE_ARN 환경 변수를 설정하세요. (README 참고)")
+    raise SystemExit("루트 .env 에 SAGEMAKER_ROLE_ARN 을 설정하세요. (README 참고)")
 
 import sagemaker  # noqa: E402
 from sagemaker.serializers import JSONSerializer  # noqa: E402
