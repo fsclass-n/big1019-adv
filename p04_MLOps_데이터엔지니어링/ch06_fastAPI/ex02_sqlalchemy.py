@@ -33,7 +33,9 @@ else:  # 없으면 이 폴더의 SQLite 파일로 연습 (설치·가입 불필�
 
 # MySQL/TiDB 데이터베이스와 파이썬을 연결하는 엔진 생성
 engine = create_engine(DATABASE_URL)
+# 데이터베이스 작업을 위한 세션 생성기
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# 데이터베이스 테이블의 기본 클래스 생성
 Base = declarative_base()
 
 
