@@ -6,7 +6,7 @@ router = APIRouter(prefix="/users", tags=["Users (유저 관리)"])
 
 @router.get("/")
 def get_users():
-  return [{"username": "김해원"}, {"username": "황상옥"}]
+  return [{"username": "김모란"}, {"username": "홍기흥"}]
 
 
 @router.post("/")
